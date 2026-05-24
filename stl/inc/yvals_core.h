@@ -9,6 +9,12 @@
 // All STL headers avoid exposing their contents when included by various
 // non-C++-compiler tools to avoid breaking builds when we use newer language
 // features in the headers than such tools understand.
+
+/*
+    note:
+        1. 检查是不是 C++ 编译器 , 如果不是 C++ 编译器 该头文件空展开
+*/
+
 #if defined(RC_INVOKED) || defined(Q_MOC_RUN) || defined(__midl)
 #define _STL_COMPILER_PREPROCESSOR 0
 #else
@@ -22,6 +28,13 @@
 #ifndef __cplusplus
 #error error STL1003: Unexpected compiler, expected C++ compiler.
 #endif // !defined(__cplusplus)
+
+/*
+    note:
+        1. 特性清单
+            1) 那些特性是 无条件支持的 , 那些是 C++14/17/20 的
+            2) 那些算法是并行算法 , 那些不是, 或还未知的
+*/
 
 // Implemented unconditionally:
 // N3911 void_t
@@ -519,6 +532,13 @@
 // * unique
 // * unique_copy
 
+/*
+    note :
+        1. _EMIT_STL_WARNING 和 _EMIT_STL_ERROR 作为错误信息展示的基础设置
+        2. _STL_WARNING_LEVEL 提醒等级
+
+*/
+
 #include <vcruntime.h>
 #include <xkeycheck.h> // The _HAS_CXX tags must be defined before including this.
 
@@ -555,6 +575,12 @@
 #else
 #define _FALLTHROUGH
 #endif
+
+/*
+    note : 542 ~ 578
+        1.[[nodiscard]] 宏族 : 对常见误用给出定值法的编译器警告
+
+*/
 
 // vcruntime.h defines _NODISCARD to [[nodiscard]]
 
@@ -652,6 +678,12 @@
 #undef lifetimebound
 #undef no_specializations
 
+/*
+    note:
+        1. MSVC 属性宏
+
+*/
+
 #ifndef __has_cpp_attribute
 #define _HAS_MSVC_ATTRIBUTE(x) 0
 #else
@@ -728,6 +760,13 @@
 #pragma pop_macro("noop_dtor")
 #pragma pop_macro("known_semantics")
 #pragma pop_macro("msvc")
+
+
+/*
+        note:
+            1. 警告抑制宏
+
+*/
 
 // warning C4577: 'noexcept' used with no exception handling mode specified;
 // termination on exception is not guaranteed. Specify /EHsc (/Wall)
@@ -903,6 +942,12 @@
 #endif // ^^^ !defined(__clang__) ^^^
 #endif // !defined(_STL_RESTORE_DEPRECATED_WARNING)
 
+
+/*
+        note:
+            1. 版本校验
+*/
+
 #define _CPPLIB_VER       650
 #define _MSVC_STL_VERSION 145
 #define _MSVC_STL_UPDATE  202605L
@@ -926,6 +971,12 @@ _EMIT_STL_ERROR(STL1001, "Unexpected compiler version, expected MSVC Compiler 19
 // not attempting to detect other compilers
 #endif // ^^^ other compilers ^^^
 #endif // !defined(_ALLOW_COMPILER_AND_STL_VERSION_MISMATCH)
+
+
+/*
+        note:
+            1. 特性开关 : 对于某些宏 , 如果用户定义了使用用户定义的 , 否则使用默认的
+*/
 
 #ifndef _HAS_STATIC_RTTI
 #define _HAS_STATIC_RTTI 1
@@ -1553,6 +1604,13 @@ _EMIT_STL_ERROR(STL1004, "C++98 unexpected() is incompatible with C++23 unexpect
 #define _HAS_GARBAGE_COLLECTION_SUPPORT_DELETED_IN_CXX23 (_HAS_FEATURES_REMOVED_IN_CXX23)
 #endif // !defined(_HAS_GARBAGE_COLLECTION_SUPPORT_DELETED_IN_CXX23)
 
+
+/*
+        note :
+            1. 特性检查宏 : 每一个特性都对应一个 __cpp_lib_xxx , 使用某个特性之前进行检查
+
+*/
+
 // C++14
 #define __cpp_lib_chrono_udls                      201304L
 #define __cpp_lib_complex_udls                     201309L
@@ -1885,6 +1943,12 @@ _EMIT_STL_ERROR(STL1013, "The STL doesn't support /RTCc because it rejects confo
 // TRANSITION: _USE_EXTERN_CXX_EVERYWHERE_FOR_STL controls whether we also wrap the STL's
 // header-only code in this linkage-specification, as a temporary workaround to allow
 // importing the named module in a translation unit with classic includes.
+
+
+/*
+        note:
+            1. 命名空间宏
+*/
 
 #ifndef _USE_EXTERN_CXX_EVERYWHERE_FOR_STL
 #define _USE_EXTERN_CXX_EVERYWHERE_FOR_STL _HAS_CXX20

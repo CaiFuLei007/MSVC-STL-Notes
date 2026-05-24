@@ -28,6 +28,11 @@ _STL_DISABLE_CLANG_WARNINGS
 #undef known_semantics
 #undef no_specializations
 
+/*
+    note:
+        1. conjunction 编译期 AND
+*/
+
 _STD_BEGIN
 template <bool _First_value, class _First, class... _Rest>
 struct _Conjunction { // handle false trait or last trait
@@ -50,6 +55,12 @@ struct conjunction<_First, _Rest...> : _Conjunction<static_cast<bool>(_First::va
 _EXPORT_STD template <class... _Traits>
 _NO_SPECIALIZATIONS_OF_TYPE_TRAITS constexpr bool conjunction_v = conjunction<_Traits...>::value;
 
+/*
+    note:
+        1. negation 编译期 非
+*/
+
+
 _EXPORT_STD template <class _Trait>
 struct _NO_SPECIALIZATIONS_OF_TYPE_TRAITS negation : bool_constant<!static_cast<bool>(_Trait::value)> {
     // The negated result of _Trait
@@ -57,6 +68,12 @@ struct _NO_SPECIALIZATIONS_OF_TYPE_TRAITS negation : bool_constant<!static_cast<
 
 _EXPORT_STD template <class _Trait>
 _NO_SPECIALIZATIONS_OF_TYPE_TRAITS constexpr bool negation_v = negation<_Trait>::value;
+
+
+/*
+    note:
+        1. is_void_t 判断是否是 void 类型
+*/
 
 _EXPORT_STD template <class _Ty>
 _NO_SPECIALIZATIONS_OF_TYPE_TRAITS constexpr bool is_void_v = is_same_v<remove_cv_t<_Ty>, void>;
@@ -73,6 +90,15 @@ struct _Identity {
 };
 template <class _Ty>
 using _Identity_t _MSVC_KNOWN_SEMANTICS = typename _Identity<_Ty>::type;
+
+
+/*
+    note:
+        1. add_const_t 添加 const 属性
+        2. add_volatile_t 添加 volatile 属性
+        3. add_cv_t 添加 const volatile 属性
+
+*/
 
 // Type modifiers
 _EXPORT_STD template <class _Ty>
@@ -98,6 +124,13 @@ struct _NO_SPECIALIZATIONS_OF_TYPE_TRAITS add_cv { // add top-level const and vo
 
 _EXPORT_STD template <class _Ty>
 using add_cv_t = typename add_cv<_Ty>::type;
+
+/*
+    note:
+        1. add_lvalue_reference_t 添加左值引用 , add_rvalue_reference_t 添加右值引用
+        2. struct _Add_reference<_Ty, void_t<_Ty&>> 第二个参数用来判断 _Ty 是否可以被引用
+*/
+
 
 template <class _Ty, class = void>
 struct _Add_reference { // add reference (non-referenceable type)
@@ -131,6 +164,13 @@ _EXPORT_STD template <class _Ty>
 add_rvalue_reference_t<_Ty> declval() noexcept {
     static_assert(false, "Calling declval is ill-formed, see N4950 [declval]/2.");
 }
+
+/*
+    note:
+        1. remove_extent 去掉数组皮 , 获取原来的类型
+        2. remove_all_extents 递归式的剥离 , 知道完全去除所有数组维度
+*/
+
 
 _EXPORT_STD template <class _Ty>
 struct _NO_SPECIALIZATIONS_OF_TYPE_TRAITS remove_extent { // remove array extent
@@ -167,6 +207,13 @@ struct remove_all_extents<_Ty[]> {
 
 _EXPORT_STD template <class _Ty>
 using remove_all_extents_t = typename remove_all_extents<_Ty>::type;
+
+/*
+    note:
+        1. remove_pointer_t 去除指针类型
+        2. add_pointer_t 添加指针类型
+*/
+
 
 _EXPORT_STD template <class _Ty>
 struct _NO_SPECIALIZATIONS_OF_TYPE_TRAITS remove_pointer {
@@ -214,6 +261,13 @@ struct _NO_SPECIALIZATIONS_OF_TYPE_TRAITS add_pointer {
 _EXPORT_STD template <class _Ty>
 using add_pointer_t = typename _Add_pointer<_Ty>::type;
 
+
+/*
+    note:
+        1. is_array_v 是否属于数组类型
+
+*/
+
 _EXPORT_STD template <class>
 _NO_SPECIALIZATIONS_OF_TYPE_TRAITS constexpr bool is_array_v = false; // determine whether type argument is an array
 
@@ -245,6 +299,16 @@ constexpr bool is_unbounded_array_v<_Ty[]> = true;
 _EXPORT_STD template <class _Ty>
 struct _NO_SPECIALIZATIONS_OF_TYPE_TRAITS is_unbounded_array : bool_constant<is_unbounded_array_v<_Ty>> {};
 #endif // _HAS_CXX20
+
+/*
+    note:
+        1. is_lvalue_reference_v 是否属于左值引用
+        2. is_rvalue_reference_v 是否属于右值引用
+        3. is_reference_v 是否属于引用类型
+        4. is_point_v 是否属于指针类型
+        5. is_null_point 是否属于空指针类型
+
+*/
 
 _EXPORT_STD template <class>
 _NO_SPECIALIZATIONS_OF_TYPE_TRAITS constexpr bool is_lvalue_reference_v =
@@ -303,6 +367,16 @@ _NO_SPECIALIZATIONS_OF_TYPE_TRAITS constexpr bool is_null_pointer_v =
 
 _EXPORT_STD template <class _Ty>
 struct _NO_SPECIALIZATIONS_OF_TYPE_TRAITS is_null_pointer : bool_constant<is_null_pointer_v<_Ty>> {};
+
+/*
+    note:
+        1. is_union_v 是否属于枚举类型
+        2. is_class_v 是否属于类类型
+        3. is_fundamental_v : is_integral || is_floating_point || is_null_point || is_void
+        4. is_convertible_v : 判断 能否从 from 类型转化为 to 类型
+        5. is_enum_v : 是否属于枚举类型
+*/
+
 
 _EXPORT_STD template <class _Ty>
 struct _NO_SPECIALIZATIONS_OF_TYPE_TRAITS is_union : bool_constant<__is_union(_Ty)> {
@@ -490,6 +564,17 @@ _NO_SPECIALIZATIONS_OF_TYPE_TRAITS constexpr bool is_compound_v = !is_fundamenta
     CLASS(const volatile&&)
 #endif // ^^^ !defined(__cpp_noexcept_function_type) ^^^
 
+/*
+    note:
+        1. _Aarg_types 模板参数类型
+        2. _Is_memfunptr 判断是不是 成员函数指针
+            1) _Bool_type 存储是不是
+            2) _Class_type 类类型
+            3) _FIRST_ARGUMENT_TYPE_NAME 第一个参数 , 隐含的 this 指针
+            4) _SECOND_ARGUMENT_TYPE_NAME 第二个参数
+
+*/
+
 template <class... _Types>
 struct _Arg_types {}; // provide argument_type, etc. when sizeof...(_Types) is 1 or 2
 
@@ -551,6 +636,13 @@ _NON_MEMBER_CALL(_IS_MEMFUNPTR_EXPLICIT_THIS_GUIDES, , , noexcept)
 #undef _IS_MEMFUNPTR_EXPLICIT_THIS_GUIDES
 #endif // _HAS_CXX23
 
+/*
+    note:
+        1. is_member_function_pointer_v 是否是函数指针类型
+
+*/
+
+
 #ifdef __clang__
 _EXPORT_STD template <class _Ty>
 _NO_SPECIALIZATIONS_OF_TYPE_TRAITS constexpr bool is_member_function_pointer_v = __is_member_function_pointer(_Ty);
@@ -564,6 +656,12 @@ _EXPORT_STD template <class _Ty>
 struct _NO_SPECIALIZATIONS_OF_TYPE_TRAITS is_member_function_pointer
     : bool_constant<is_member_function_pointer_v<_Ty>> {};
 
+/*
+    note:
+        1. is_const_v 是否属于 const 类型
+        2. is_volatile_v 是否属于 volatile 类型
+
+*/
 _EXPORT_STD template <class>
 _NO_SPECIALIZATIONS_OF_TYPE_TRAITS constexpr bool is_const_v =
     false; // determine whether type argument is const qualified
@@ -584,6 +682,15 @@ constexpr bool is_volatile_v<volatile _Ty> = true;
 _EXPORT_STD template <class _Ty>
 struct _NO_SPECIALIZATIONS_OF_TYPE_TRAITS is_volatile : bool_constant<is_volatile_v<_Ty>> {};
 
+/*
+    note:
+        1. is_function_v 是否属于函数类型
+            1) 不能被 const 修饰 , 并且不能被引用
+        2. is_object_v 是否是对象类型
+            1) 可以被 const 修饰 , 并且不是 void 类型
+
+*/
+
 _EXPORT_STD template <class _Ty>
 _NO_SPECIALIZATIONS_OF_TYPE_TRAITS constexpr bool
     is_function_v = // only function types and reference types can't be const qualified
@@ -599,6 +706,16 @@ _NO_SPECIALIZATIONS_OF_TYPE_TRAITS constexpr bool
 
 _EXPORT_STD template <class _Ty>
 struct _NO_SPECIALIZATIONS_OF_TYPE_TRAITS is_object : bool_constant<is_object_v<_Ty>> {};
+
+
+/*
+    note:
+        1. is_member_object_pointer_v 判断是不是成员对象指针
+            1) _Ty1 _Ty2::* 匹配所有成员指针类型 , 如果不是成员函数指针类型就是成员对象类型
+        2. is_member_pointer _v是否是成员指针类型
+            1) 成员函数指针类型 或 成员对象指针类型
+
+*/
 
 template <class>
 struct _Is_member_object_pointer {
@@ -637,6 +754,13 @@ struct _NO_SPECIALIZATIONS_OF_TYPE_TRAITS is_member_pointer : bool_constant<is_m
     // determine whether _Ty is a pointer to member
 };
 
+/*
+    note:
+        1. is_scalar_v 是不是标量类型 : is_arithmetic_v<_Ty> || is_enum_v<_Ty> || is_pointer_v<_Ty> ||
+                                        is_member_pointer_v<_Ty> || is_null_pointer_v<_Ty>
+*/
+
+
 _EXPORT_STD template <class _Ty>
 _NO_SPECIALIZATIONS_OF_TYPE_TRAITS constexpr bool is_scalar_v = // determine whether _Ty is a scalar type
     is_arithmetic_v<_Ty> || is_enum_v<_Ty> || is_pointer_v<_Ty> || is_member_pointer_v<_Ty> || is_null_pointer_v<_Ty>;
@@ -651,6 +775,16 @@ struct _CXX20_DEPRECATE_IS_POD _NO_SPECIALIZATIONS_OF_TYPE_TRAITS is_pod : bool_
 
 _EXPORT_STD template <class _Ty>
 _CXX20_DEPRECATE_IS_POD _NO_SPECIALIZATIONS_OF_TYPE_TRAITS constexpr bool is_pod_v = __is_pod(_Ty);
+
+
+/*
+    note:
+        1. is_empty_v : 是否属于空类
+        2. is_polmorphic_v : 是否属于多态类
+        3. is_abstact_v : 是否属于抽象类
+        4. is_final_v : 是否属于 final 类
+
+*/
 
 _EXPORT_STD template <class _Ty>
 struct _NO_SPECIALIZATIONS_OF_TYPE_TRAITS is_empty : bool_constant<__is_empty(_Ty)> {
@@ -726,6 +860,13 @@ _EXPORT_STD template <class _Ty>
 _NO_SPECIALIZATIONS_OF_TYPE_TRAITS constexpr bool is_implicit_lifetime_v = __builtin_is_implicit_lifetime(_Ty);
 #endif // ^^^ no workaround ^^^
 #endif // _HAS_CXX23
+
+
+/*
+    note:
+        1, has_virtual_destructor : 是否存在虚析构函数
+
+*/
 
 _EXPORT_STD template <class _Ty>
 struct _NO_SPECIALIZATIONS_OF_TYPE_TRAITS has_virtual_destructor : bool_constant<__has_virtual_destructor(_Ty)> {
@@ -1087,6 +1228,15 @@ struct _NO_SPECIALIZATIONS_OF_TYPE_TRAITS is_nothrow_destructible : bool_constan
 _EXPORT_STD template <class _Ty>
 _NO_SPECIALIZATIONS_OF_TYPE_TRAITS constexpr bool is_nothrow_destructible_v = __is_nothrow_destructible(_Ty);
 
+/*
+    note:
+        _Sign_base : 判断一个类型是否属于无符号类型
+            1) 判断方法 : 如果是整形 :  去除 const volatile 修饰之后 , 看 -1 的值是否比 0 小
+                          如果不是整形 , 看类型 is_floating_point_v
+
+*/
+
+
 template <class _Ty, bool = is_integral_v<_Ty>>
 struct _Sign_base { // determine whether integral type _Ty is signed or unsigned
     using _Uty = remove_cv_t<_Ty>;
@@ -1118,6 +1268,14 @@ struct _NO_SPECIALIZATIONS_OF_TYPE_TRAITS is_unsigned : bool_constant<_Sign_base
 _EXPORT_STD template <class _Ty>
 _NO_SPECIALIZATIONS_OF_TYPE_TRAITS constexpr bool is_unsigned_v = _Sign_base<_Ty>::_Unsigned;
 
+
+/*
+    note:
+        1. _Select 编译期二选一 : 如果为 true 选择第一种类型 , 否则选择第二种类型
+
+*/
+
+
 template <bool>
 struct _Select { // Select between aliases that extract either their first or second parameter
     template <class _Ty1, class>
@@ -1129,6 +1287,15 @@ struct _Select<false> {
     template <class, class _Ty2>
     using _Apply = _Ty2;
 };
+
+
+/*
+    note:
+        1. _Make_signed2 根据模板给定的字节数 来生成对应的有符号类型
+        2. _Make_signed1 对 _Make_signed2 进行封装, 用户只需要传入类型即可
+
+*/
+
 
 template <size_t>
 struct _Make_signed2; // Choose make_signed strategy by type size
@@ -1161,6 +1328,15 @@ struct _Make_signed2<8> {
 template <class _Ty>
 using _Make_signed1 = // signed partner to cv-unqualified _Ty
     typename _Make_signed2<sizeof(_Ty)>::template _Apply<_Ty>;
+
+
+/*
+    note:
+        1. make_signed_t 获取有符号类型
+            1) 通过 remove_cv 去除 const volatile 修饰 , 展开为 (const) (volatile) _Make_signed1<_Ty>
+
+*/
+
 
 _EXPORT_STD template <class _Ty>
 struct _NO_SPECIALIZATIONS_OF_TYPE_TRAITS make_signed { // signed partner to _Ty
@@ -1223,6 +1399,15 @@ template <class _Rep>
 constexpr make_unsigned_t<_Rep> _Unsigned_value(_Rep _Val) { // makes _Val unsigned
     return static_cast<make_unsigned_t<_Rep>>(_Val);
 }
+
+
+/*
+    note:
+        1. alignment_of_v 获取 _Ty 类型的对齐数
+        2. aligned_storage_v 给定 类型大小, 类型对齐树, 生成对应的联合体 _Align_type ,
+   该联合体和大小都满足给定的模板参数
+*/
+
 
 _EXPORT_STD template <class _Ty>
 struct _NO_SPECIALIZATIONS_OF_TYPE_TRAITS alignment_of : integral_constant<size_t, alignof(_Ty)> {
@@ -1308,6 +1493,14 @@ struct _CXX23_DEPRECATE_ALIGNED_STORAGE _NO_SPECIALIZATIONS_OF_TYPE_TRAITS align
 _EXPORT_STD template <size_t _Len, size_t _Align = alignof(max_align_t)>
 using aligned_storage_t _CXX23_DEPRECATE_ALIGNED_STORAGE = _Aligned_storage_t<_Len, _Align>;
 
+
+/*
+    note:
+        1. _Maximum 编译期获取最大值
+
+*/
+
+
 template <size_t... _Vals>
 struct _Maximum;
 
@@ -1321,6 +1514,15 @@ template <size_t _First, size_t _Second, size_t... _Rest>
 struct _Maximum<_First, _Second, _Rest...> : _Maximum<(_First < _Second ? _Second : _First), _Rest...>::type {
     // find maximum value in _First, _Second, _Rest...
 };
+
+
+/*
+    note:
+        1. aligned_union 获取一个能够容纳 所有 _Types 类型的 _Align_type 的联合体, 并且大小至少为 _Len
+            获取一个大小是 _Types类型大小的最大值 , 并且大小不小于 _Len, 对齐数位 类型中对齐数的最大值
+
+*/
+
 
 _EXPORT_STD template <size_t _Len, class... _Types>
 struct _CXX23_DEPRECATE_ALIGNED_UNION _NO_SPECIALIZATIONS_OF_TYPE_TRAITS aligned_union {
@@ -1351,6 +1553,13 @@ struct _NO_SPECIALIZATIONS_OF_TYPE_TRAITS underlying_type : _Underlying_type<_Ty
 _EXPORT_STD template <class _Ty>
 using underlying_type_t = typename _Underlying_type<_Ty>::type;
 
+/*
+    note:
+        1. rank_v 计算是几维数组
+
+*/
+
+
 _EXPORT_STD template <class _Ty>
 _NO_SPECIALIZATIONS_OF_TYPE_TRAITS constexpr size_t rank_v = 0; // determine number of dimensions of array _Ty
 
@@ -1362,6 +1571,12 @@ constexpr size_t rank_v<_Ty[]> = rank_v<_Ty> + 1;
 
 _EXPORT_STD template <class _Ty>
 struct _NO_SPECIALIZATIONS_OF_TYPE_TRAITS rank : integral_constant<size_t, rank_v<_Ty>> {};
+
+/*
+    note:
+        1. extent_v 获取数组 _Ix 维度的长度
+
+*/
 
 _EXPORT_STD template <class _Ty, unsigned int _Ix = 0>
 _NO_SPECIALIZATIONS_OF_TYPE_TRAITS constexpr size_t extent_v = 0; // determine extent of dimension _Ix of array _Ty
@@ -1378,6 +1593,12 @@ constexpr size_t extent_v<_Ty[], _Ix> = extent_v<_Ty, _Ix - 1>;
 _EXPORT_STD template <class _Ty, unsigned int _Ix = 0>
 struct _NO_SPECIALIZATIONS_OF_TYPE_TRAITS extent : integral_constant<size_t, extent_v<_Ty, _Ix>> {};
 
+/*
+    note:
+        1. is_base_of : 判断是否具有继承关系
+
+*/
+
 _EXPORT_STD template <class _Base, class _Derived>
 struct _NO_SPECIALIZATIONS_OF_TYPE_TRAITS is_base_of : bool_constant<__is_base_of(_Base, _Derived)> {
     // determine whether _Base is a base of or the same as _Derived
@@ -1385,6 +1606,17 @@ struct _NO_SPECIALIZATIONS_OF_TYPE_TRAITS is_base_of : bool_constant<__is_base_o
 
 _EXPORT_STD template <class _Base, class _Derived>
 _NO_SPECIALIZATIONS_OF_TYPE_TRAITS constexpr bool is_base_of_v = __is_base_of(_Base, _Derived);
+
+
+/*
+    note:
+        1. decay 模拟按值传参时, 编译期自动做的类型退化
+            1) 先去除 引用修饰
+            2) 如果是数组 , type 就是 数组元素指针
+            3) 不是数组, 如果是函数,  就是函数指针, 如果不是函数 就去除 cv 修饰
+
+*/
+
 
 _EXPORT_STD template <class _Ty>
 struct _NO_SPECIALIZATIONS_OF_TYPE_TRAITS decay { // determines decayed version of _Ty
@@ -1414,6 +1646,14 @@ struct _Const_lvalue_cond_oper<_Ty1, _Ty2> {
 template <class _Ty1, class _Ty2, class = void>
 struct _Decayed_cond_oper : _Const_lvalue_cond_oper<_Ty1, _Ty2> {};
 #else // ^^^ _HAS_CXX20 / !_HAS_CXX20 vvv
+
+/*
+    note:
+        1. _Decayed_cond_oper 获取两个类型的共同类型  , 并获取共同类型退化的类型
+
+*/
+
+
 template <class _Ty1, class _Ty2, class = void>
 struct _Decayed_cond_oper {};
 #endif // ^^^ !_HAS_CXX20 ^^^
@@ -1423,11 +1663,17 @@ struct _Decayed_cond_oper<_Ty1, _Ty2, void_t<_Conditional_type<_Ty1, _Ty2>>> {
     using type = decay_t<_Conditional_type<_Ty1, _Ty2>>;
 };
 
-_EXPORT_STD template <class... _Ty>
-struct common_type; // specializations allowed by N5014 [meta.trans.other]/5
+
+/*
+    note:
+        1. common_type 获取多个类型的 共同类型
+            1) 递归, 两个两个,  依次获取 , 最终作用到 _Conditional_type 来获取两个类型的 共同类型
+
+*/
+
 
 _EXPORT_STD template <class... _Ty>
-using common_type_t = typename common_type<_Ty...>::type;
+struct common_type; // specializations allowed by N5014 [meta.trans.other]/5
 
 template <>
 struct common_type<> {};
@@ -1435,14 +1681,22 @@ struct common_type<> {};
 template <class _Ty1>
 struct common_type<_Ty1> : common_type<_Ty1, _Ty1> {};
 
+template <class _Ty1, class _Ty2>
+struct common_type<_Ty1, _Ty2> : _Common_type2<_Ty1, _Ty2> {};
+
+template <class _Ty1, class _Ty2, class... _Rest>
+struct common_type<_Ty1, _Ty2, _Rest...> : _Common_type3<void, _Ty1, _Ty2, _Rest...> {};
+
+_EXPORT_STD template <class... _Ty>
+using common_type_t = typename common_type<_Ty...>::type;
+
+
 template <class _Ty1, class _Ty2, class _Decayed1 = decay_t<_Ty1>, class _Decayed2 = decay_t<_Ty2>>
 struct _Common_type2 : common_type<_Decayed1, _Decayed2> {};
 
 template <class _Ty1, class _Ty2>
 struct _Common_type2<_Ty1, _Ty2, _Ty1, _Ty2> : _Decayed_cond_oper<_Ty1, _Ty2> {};
 
-template <class _Ty1, class _Ty2>
-struct common_type<_Ty1, _Ty2> : _Common_type2<_Ty1, _Ty2> {};
 
 template <class _Void, class _Ty1, class _Ty2, class... _Rest>
 struct _Common_type3 {};
@@ -1451,8 +1705,6 @@ template <class _Ty1, class _Ty2, class... _Rest>
 struct _Common_type3<void_t<common_type_t<_Ty1, _Ty2>>, _Ty1, _Ty2, _Rest...>
     : common_type<common_type_t<_Ty1, _Ty2>, _Rest...> {};
 
-template <class _Ty1, class _Ty2, class... _Rest>
-struct common_type<_Ty1, _Ty2, _Rest...> : _Common_type3<void, _Ty1, _Ty2, _Rest...> {};
 
 template <class _Ty>
 _Ty _Returns_exactly() noexcept; // not defined
@@ -1460,6 +1712,13 @@ _Ty _Returns_exactly() noexcept; // not defined
 #if _HAS_CXX20
 _EXPORT_STD template <class, class, template <class> class, template <class> class>
 struct basic_common_reference {}; // specializations allowed by N5014 [meta.trans.other]/7
+
+
+/*
+    note:
+        1. _Copy_cv 将 _From 类型顶层的 const volatile 拷贝到 _To 上面s
+
+*/
 
 template <class _From>
 struct _Copy_cv_impl {
@@ -1484,6 +1743,14 @@ struct _Copy_cv_impl<const volatile _From> {
 template <class _From, class _To>
 using _Copy_cv = // N4950 [meta.trans.other]/2.3
     _Copy_cv_impl<_From>::template _Apply<_To>;
+
+
+/*
+    note:
+        1. _Add_qualifiers 不仅仅拷贝 const volatile 还会拷贝引用
+
+*/
+
 
 template <class _Ty1>
 struct _Add_qualifiers { // _Add_qualifiers<A>::template _Apply is XREF(A) from N4950 [meta.trans.other]/2.2
@@ -1620,6 +1887,12 @@ _EXPORT_STD template <class _Ty>
 using type_identity_t = type_identity<_Ty>::type;
 #endif // _HAS_CXX20
 
+/*
+    note：
+        1. _Is_specializaion : 检测一个类型是否是模板的实例化
+
+*/
+
 template <class _Type, template <class...> class _Template>
 constexpr bool _Is_specialization_v = false; // true if and only if _Type is a specialization of _Template
 template <template <class...> class _Template, class... _Types>
@@ -1627,6 +1900,13 @@ constexpr bool _Is_specialization_v<_Template<_Types...>, _Template> = true;
 
 template <class _Type, template <class...> class _Template>
 struct _Is_specialization : bool_constant<_Is_specialization_v<_Type, _Template>> {};
+
+/*
+    note:
+        1. forward : 进行完美转发 , 参数是什么值就返回什么值
+        2. move 将左值和右值都转化为右值
+*/
+
 
 _EXPORT_STD template <class _Ty>
 _NODISCARD _MSVC_INTRINSIC constexpr _Ty&& forward(remove_reference_t<_Ty>& _Arg) noexcept {
@@ -1688,6 +1968,17 @@ class reference_wrapper;
 // (N4950 [constexpr.functions]/1), yet both std::apply and std::visit are required to be constexpr and have
 // invoke-like behavior. As a result, we've chosen to apply the part of P1065R2 resolving LWG-2894 as a defect report.
 
+/*
+    note:
+        1. invoke 统一调用接口 , 不论可调用对象是什么类型的 , 都用同一个语法来调用
+        2. enum _Invooker_strategy 7种调用策略的枚举
+            1) _Invoke_functor 通过可调用对象和参数来调用可调用对象
+            2) _Invoke_pmf_object 通过函数指针,对象以及参数来进行调用
+            3) _Invoker_pmf_refwrap 通过函数指针, ref 引用的对象 以及参数来进行调用
+            4) _Invoker_pmf_pointer 通过函数指针,对象指针以及参数来进行调用
+*/
+
+
 enum class _Invoker_strategy {
     _Functor,
     _Pmf_object,
@@ -1742,6 +2033,15 @@ struct _Invoker_pmf_pointer {
     }
 };
 
+/*
+    note:
+        5) _Invoker_pmd_object 通过对象 , 对象成员地址来获取对象成员
+        6) _Invoke_pmd_refwrap 通过 ref引用的对象 , 对象成员地址来获取对象成员
+        7) _Invoker_pmd_pointer 通过 对象指针 , 对象成员地址
+
+
+*/
+
 struct _Invoker_pmd_object {
     static constexpr _Invoker_strategy _Strategy = _Invoker_strategy::_Pmd_object;
 
@@ -1769,6 +2069,17 @@ struct _Invoker_pmd_pointer {
         return (*static_cast<_Ty1&&>(_Arg1)).*_Pmd;
     }
 };
+
+
+/*
+    note:
+        1. _Invoke1 作为 invoke 的核心分发器
+            1) 判断 _Is_pmf ,  _Is_pmd 要访问的是成员变量 还是 成员函数
+                a) 成员函数: 判断 传入的是对象 , 对象指针 , 还是 std::reference_wrapper
+                b) 成员变量: 判断 传入的是对象 , 对象指针 , 还是 std::reference_wrapper
+
+*/
+
 
 template <class _Callable, class _Ty1, class _Removed_cvref = _Remove_cvref_t<_Callable>,
     bool _Is_pmf = is_member_function_pointer_v<_Removed_cvref>,
@@ -1883,6 +2194,17 @@ struct _Invoke_convertible<_From, _To, void_t<decltype(_STD _Fake_copy_init<_To>
 template <class _From, class _To>
 struct _Invoke_nothrow_convertible
     : bool_constant<noexcept(_STD _Fake_copy_init<_To>(_STD _Returns_exactly<_From>()))> {};
+
+
+/*
+    note:
+        1. _Invoke_traits_common 是 invoke_result , is_invocable 等 trait 的结果容器
+            1) type 存储返回类型
+            2) _Is_invocable 存储调用是否有效
+            3) _Is_invocable_r 存储返回值是否可以转化为 _Rxs
+
+*/
+
 
 template <class _Result, bool _Nothrow>
 struct _Invoke_traits_common {
@@ -2130,6 +2452,15 @@ struct _Refwrap_has_ctor_from : false_type {};
 template <class _Ty, class _Uty>
 struct _Refwrap_has_ctor_from<_Ty, _Uty, void_t<decltype(_STD _Refwrap_ctor_fun<_Ty>(_STD declval<_Uty>()))>>
     : true_type {}; // _STD _Refwrap_ctor_fun is qualified: avoid ADL, handle incomplete types
+
+
+/*
+    note:
+        1. reference_wrapper : 一个指针伪装成了引用
+            1) _Ref 中存储引用 , Ptr中存储指针
+
+*/
+
 
 _EXPORT_STD template <class _Ty>
 class reference_wrapper

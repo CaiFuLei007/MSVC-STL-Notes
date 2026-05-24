@@ -23,6 +23,15 @@ _STL_DISABLE_CLANG_WARNINGS
 #undef known_semantics
 #undef no_specializations
 
+
+/*
+    note:
+        integral_constant 作为模板元编程的最小单元
+        1. 将值包装为类型 , 其中 value_type 为值得类型
+        2. 通过将值包装为对象 , 既可以获取值得大小 , 也可以获取值得类型进行分发
+
+*/
+
 _STD_BEGIN
 _EXPORT_STD template <class _Ty, _Ty _Val>
 struct _NO_SPECIALIZATIONS_OF_TYPE_TRAITS integral_constant {
@@ -40,11 +49,34 @@ struct _NO_SPECIALIZATIONS_OF_TYPE_TRAITS integral_constant {
     }
 };
 
+/*
+    note:
+        1. true_type 一个表示 'true' 的类型
+        2. false_type 一个表示 'false' 的类型
+*/
+
 _EXPORT_STD template <bool _Val>
 using bool_constant = integral_constant<bool, _Val>;
 
 _EXPORT_STD using true_type  = bool_constant<true>;
 _EXPORT_STD using false_type = bool_constant<false>;
+
+
+/*
+    note:
+        1. enable_if<_Test , _Ty> 当 _Test = false 的时候, enable_if<false , T>::value_type 不存在
+            此时编译器不会报错, 而是让编译其静默放弃这个模板重载
+        2. 只有当 _Test 为 true 的时候, enable_if<false , T>::value_type 才存在
+
+        功能 : 放在模板参数列表或返回值中 , 可以让某个模板重载在条件不满足时 直接 "消失"
+                可以让约束变得更丰富 , 更具体
+        比如：
+            1) template<class T , enable_if_t<is_integral_v<T> , int> = 0>
+            2) template<class T , enable_if_t<!is_integral_v<T> , int> = 0>
+            如果 T 的类型不是 int 1) 的模板就会直接消失 , 使用 2) 的
+
+
+*/
 
 _EXPORT_STD template <bool _Test, class _Ty = void>
 struct _NO_SPECIALIZATIONS_OF_TYPE_TRAITS enable_if {}; // no member "type" when !_Test
@@ -62,6 +94,14 @@ struct _NO_SPECIALIZATIONS_OF_TYPE_TRAITS conditional { // Choose _Ty1 if _Test 
     using type = _Ty1;
 };
 
+
+/*
+    note:
+        1. conditional 作为编译期 if-else
+            1) 第一个参数为 true , type 是 _Ty1 ,否则是 _Ty2
+
+*/
+
 template <class _Ty1, class _Ty2>
 struct conditional<false, _Ty1, _Ty2> {
     using type = _Ty2;
@@ -69,6 +109,13 @@ struct conditional<false, _Ty1, _Ty2> {
 
 _EXPORT_STD template <bool _Test, class _Ty1, class _Ty2>
 using conditional_t = typename conditional<_Test, _Ty1, _Ty2>::type;
+
+/*
+    note:
+        1. is_same_v 判断模板参数类型时候相同
+            1) 主模板: 两个模板参数 is_same_v = false
+            2) 偏特化: 两个模板参数相同is_same_v = true
+*/
 
 #ifdef __clang__
 _EXPORT_STD template <class _Ty1, class _Ty2>
@@ -85,6 +132,13 @@ constexpr bool is_same_v<_Ty, _Ty> = true;
 _EXPORT_STD template <class _Ty1, class _Ty2>
 struct _NO_SPECIALIZATIONS_OF_TYPE_TRAITS is_same : bool_constant<is_same_v<_Ty1, _Ty2>> {};
 #endif // ^^^ not Clang ^^^
+
+/*
+    note:
+        1. remove_const 通过模板特化移除 const 属性
+        2. remove_volatile 同理移除 volatile 属性
+
+*/
 
 _EXPORT_STD template <class _Ty>
 struct _NO_SPECIALIZATIONS_OF_TYPE_TRAITS remove_const { // remove top-level const qualifier
@@ -111,6 +165,15 @@ struct remove_volatile<volatile _Ty> {
 
 _EXPORT_STD template <class _Ty>
 using remove_volatile_t = typename remove_volatile<_Ty>::type;
+
+
+/*
+    note:
+        1. remove_cv 通过模板特化 移除 const volatile 属性
+            1) 其中 template <template <class> class _Fn> 的 _Fn 不再是一个具体的类型了 ,
+                而是一个只差填入类型参数就能实例化的模板
+            2) _Apply 可以搭配 _Fn 进行使用 , 将 _Ty 作为模板参数传递给其他模板
+*/
 
 _EXPORT_STD template <class _Ty>
 struct _NO_SPECIALIZATIONS_OF_TYPE_TRAITS remove_cv { // remove top-level const and volatile qualifiers
@@ -147,6 +210,14 @@ struct remove_cv<const volatile _Ty> {
 _EXPORT_STD template <class _Ty>
 using remove_cv_t = typename remove_cv<_Ty>::type;
 
+/*
+    note:
+        编译器 OR
+        1) 短路 + 实例化保护
+        2) 找到第一个 true 之后 , 后面的模板参数不再进行实例化
+*/
+
+
 template <bool _First_value, class _First, class... _Rest>
 struct _Disjunction { // handle true trait or last trait
     using type = _First;
@@ -168,6 +239,13 @@ struct disjunction<_First, _Rest...> : _Disjunction<static_cast<bool>(_First::va
 _EXPORT_STD template <class... _Traits>
 _NO_SPECIALIZATIONS_OF_TYPE_TRAITS constexpr bool disjunction_v = disjunction<_Traits...>::value;
 
+/*
+    note:
+        1. _Is_any_of_v 判断 _Ty 是不是 _Types 中的类型之一
+        2. disjunction_v<is_same<_Ty, _Types>...> 参数包展开
+*/
+
+
 template <class _Ty, class... _Types>
 constexpr bool _Is_any_of_v = // true if and only if _Ty is in _Types
 #if _HAS_CXX17
@@ -185,6 +263,14 @@ _EXPORT_STD _NODISCARD constexpr bool is_constant_evaluated() noexcept {
     return __builtin_is_constant_evaluated();
 }
 #endif // _HAS_CXX20
+
+/*
+    note:
+        1. is_integral_v 判断是不是 int 类型
+        2. is_floating_point_v 判断是不是 float 类型
+        3. is_arithmetic 判断是不是算数类型 , 包含上面两种
+*/
+
 
 _EXPORT_STD template <class _Ty>
 _NO_SPECIALIZATIONS_OF_TYPE_TRAITS constexpr bool is_integral_v = _Is_any_of_v<remove_cv_t<_Ty>, bool, char,
@@ -213,6 +299,12 @@ _NO_SPECIALIZATIONS_OF_TYPE_TRAITS constexpr bool is_arithmetic_v = // determine
 
 _EXPORT_STD template <class _Ty>
 struct _NO_SPECIALIZATIONS_OF_TYPE_TRAITS is_arithmetic : bool_constant<is_arithmetic_v<_Ty>> {};
+
+/*
+    note:
+        1. remove_reference 移除 引用 修饰
+*/
+
 
 _EXPORT_STD template <class _Ty>
 struct _NO_SPECIALIZATIONS_OF_TYPE_TRAITS remove_reference {
